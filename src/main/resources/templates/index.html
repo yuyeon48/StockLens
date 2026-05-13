@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>한국 주식 Top50</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Apple SD Gothic Neo', sans-serif;
+            background: #0d1117;
+            color: #e6edf3;
+        }
+
+        header {
+            background: #161b22;
+            padding: 20px 40px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 { font-size: 20px; color: #58a6ff; }
+
+        #refresh-btn {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #refresh-btn:hover { background: #2ea043; }
+        #refresh-btn:disabled { background: #444; cursor: not-allowed; }
+
+        .container { padding: 30px 40px; }
+
+        #status {
+            margin-bottom: 16px;
+            color: #8b949e;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #161b22;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: #21262d;
+            padding: 14px 16px;
+            text-align: right;
+            font-size: 13px;
+            color: #8b949e;
+            border-bottom: 1px solid #30363d;
+        }
+
+        th:first-child, th:nth-child(2) { text-align: left; }
+
+        td {
+            padding: 14px 16px;
+            text-align: right;
+            font-size: 14px;
+            border-bottom: 1px solid #21262d;
+        }
+
+        td:first-child, td:nth-child(2) { text-align: left; }
+
+        tr:hover td { background: #1c2128; }
+
+        .rank { color: #8b949e; font-size: 13px; }
+        .name { font-weight: 600; }
+        .symbol { color: #8b949e; font-size: 12px; }
+
+        .up { color: #f85149; }
+        .down { color: #58a6ff; }
+        .flat { color: #8b949e; }
+
+        .volume { color: #8b949e; }
+        #ai-btn {
+    background: #6e40c9;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-left: 10px;
+}
+
+#ai-btn:hover { background: #8957e5; }
+#ai-btn:disabled { background: #444; cursor: not-allowed; }
+
+#ai-result {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    display: none;
+}
+
+#ai-result h3 {
+    color: #8957e5;
+    margin-bottom: 12px;
+    font-size: 16px;
+}
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🇰🇷 한국 주식 시가총액 Top 50</h1>
+    <button id="refresh-btn" onclick="refresh()">🔄 실시간 업데이트</button>
+    <button id="ai-btn" onclick="getAiRecommend()">🤖 AI 종목 추천</button>
+</header>
+
+<div class="container">
+    <div id="status">마지막 업데이트: 서버 시작 시점</div>
+    <div id="ai-result">
+        <h3>🤖 AI 종목 추천</h3>
+        <div id="ai-content"></div>
+    </div>
+    <table>
+        <thead>
+        <tr>
+            <th>순위</th>
+            <th>종목명</th>
+            <th>현재가</th>
+            <th>전일대비</th>
+            <th>등락률</th>
+            <th>거래량</th>
+        </tr>
+        </thead>
+        <tbody id="stock-table">
+        <tr th:each="stock, stat : ${stocks}">
+            <td class="rank" th:text="${stat.index + 1}"></td>
+            <td>
+                <div class="name" th:text="${stock.name}"></div>
+                <div class="symbol" th:text="${stock.symbol}"></div>
+            </td>
+            <td th:text="${#numbers.formatInteger(stock.price, 1, 'COMMA')} + '원'"></td>
+            <td th:classappend="${stock.change > 0} ? 'up' : (${stock.change < 0} ? 'down' : 'flat')"
+                th:text="${stock.change > 0} ? '+' + ${stock.change} : ${stock.change}"></td>
+            <td th:classappend="${stock.changePercent > 0} ? 'up' : (${stock.changePercent < 0} ? 'down' : 'flat')"
+                th:text="${stock.changePercent > 0} ? '+' + ${stock.changePercent} + '%' : ${stock.changePercent} + '%'"></td>
+            <td class="volume" th:text="${#numbers.formatInteger(stock.volume, 1, 'COMMA')}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    function refresh() {
+        const btn = document.getElementById('refresh-btn');
+        const status = document.getElementById('status');
+        btn.disabled = true;
+        btn.textContent = '⏳ 업데이트 중... (약 30초 소요)';
+
+        fetch('/stocks/refresh', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.getElementById('stock-table');
+                tbody.innerHTML = '';
+                data.forEach((stock, i) => {
+                    const changeClass = stock.change > 0 ? 'up' : stock.change < 0 ? 'down' : 'flat';
+                    const changeSign = stock.change > 0 ? '+' : '';
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="rank">${i + 1}</td>
+                            <td>
+                                <div class="name">${stock.name}</div>
+                                <div class="symbol">${stock.symbol}</div>
+                            </td>
+                            <td>${stock.price.toLocaleString()}원</td>
+                            <td class="${changeClass}">${changeSign}${stock.change}</td>
+                            <td class="${changeClass}">${changeSign}${stock.changePercent}%</td>
+                            <td class="volume">${stock.volume.toLocaleString()}</td>
+                        </tr>`;
+                });
+                status.textContent = '마지막 업데이트: ' + new Date().toLocaleTimeString();
+                btn.disabled = false;
+                btn.textContent = '🔄 실시간 업데이트';
+            })
+            .catch(err => {
+                status.textContent = '업데이트 실패: ' + err;
+                btn.disabled = false;
+                btn.textContent = '🔄 실시간 업데이트';
+            });
+    }
+    function getAiRecommend() {
+    const btn = document.getElementById('ai-btn');
+    const result = document.getElementById('ai-result');
+    const content = document.getElementById('ai-content');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ AI 분석 중...';
+    result.style.display = 'block';
+    content.textContent = 'GPT-4o가 데이터를 분석하고 있습니다...';
+
+    fetch('/stocks/ai-recommend')
+        .then(res => res.text())
+        .then(data => {
+            content.textContent = data;
+            btn.disabled = false;
+            btn.textContent = '🤖 AI 종목 추천';
+        })
+        .catch(err => {
+            content.textContent = '오류 발생: ' + err;
+            btn.disabled = false;
+            btn.textContent = '🤖 AI 종목 추천';
+        });
+}
+</script>
+
+</body>
+</html>
