@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>로그인 - StockLens</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Apple SD Gothic Neo', sans-serif; background: #0d1117; color: #e6edf3; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 40px; width: 360px; }
+        h1 { color: #58a6ff; font-size: 22px; margin-bottom: 8px; text-align: center; }
+        .subtitle { color: #8b949e; font-size: 14px; text-align: center; margin-bottom: 28px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 13px; color: #8b949e; margin-bottom: 6px; }
+        input { width: 100%; padding: 10px 14px; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; color: #e6edf3; font-size: 14px; }
+        input:focus { outline: none; border-color: #58a6ff; }
+        .btn-primary { width: 100%; padding: 12px; background: #238636; color: white; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; margin-top: 8px; }
+        .btn-primary:hover { background: #2ea043; }
+        .btn-google { width: 100%; padding: 12px; background: #4285f4; color: white; border: none; border-radius: 6px; font-size: 15px; cursor: pointer; margin-top: 10px; text-decoration: none; display: block; text-align: center; }
+        .btn-google:hover { background: #357ae8; }
+        .divider { text-align: center; color: #8b949e; font-size: 13px; margin: 16px 0; }
+        .error { background: #3d1a1a; border: 1px solid #f85149; color: #f85149; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; }
+        .footer { text-align: center; margin-top: 20px; font-size: 13px; color: #8b949e; }
+        .footer a { color: #58a6ff; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>🇰🇷 StockLens</h1>
+    <p class="subtitle">로그인하고 AI 추천을 받아보세요</p>
+
+    <div class="error" th:if="${param.error}">
+        이메일 또는 비밀번호가 올바르지 않습니다.
+    </div>
+
+    <form method="post" action="/login-process">
+        <div class="form-group">
+            <label>이메일</label>
+            <input type="email" name="email" placeholder="이메일 입력" required>
+        </div>
+        <div class="form-group">
+            <label>비밀번호</label>
+            <input type="password" name="password" placeholder="비밀번호 입력" required>
+        </div>
+        <button type="submit" class="btn-primary">로그인</button>
+    </form>
+
+    <div class="divider">또는</div>
+
+    <a href="/oauth2/authorization/google" class="btn-google">🔑 구글로 로그인</a>
+
+    <div class="footer">
+        계정이 없으신가요? <a href="/register">회원가입</a>
+    </div>
+</div>
+</body>
+</html>
