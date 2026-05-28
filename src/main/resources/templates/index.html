@@ -98,7 +98,7 @@
     <div class="logo">Stock<span>Lens</span></div>
     <div class="header-right">
         <div sec:authorize="isAuthenticated()">
-            <span class="user-name" th:text="${username}"></span>
+            <span class="user-name" th:text="${username} + '님 환영합니다'"></span>
             <a href="/logout" class="btn btn-danger" style="margin-left:8px;">로그아웃</a>
         </div>
         <div sec:authorize="!isAuthenticated()" style="display:flex; gap:6px;">
