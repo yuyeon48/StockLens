@@ -14,10 +14,15 @@ public class Stock {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String symbol;        // 종목코드 (예: 005930)
-    private String name;          // 종목명
-    private Double price;         // 현재가
-    private Double change;        // 전일대비
-    private Double changePercent; // 등락률
-    private Long volume;          // 거래량
+    private String symbol;
+    private String name;
+    private Double price;
+
+    @Column(name = "stock_change")
+    private Double change;
+
+    @Column(name = "change_percent")
+    private Double changePercent;
+
+    private Long volume;
 }

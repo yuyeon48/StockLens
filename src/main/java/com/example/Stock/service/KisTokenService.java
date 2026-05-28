@@ -1,12 +1,12 @@
 package com.example.Stock.service;
 
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,9 +26,13 @@ public class KisTokenService {
     private String baseUrl;
 
     private String cachedToken = null;
+    private LocalDateTime tokenExpiry = null;
 
     public String getAccessToken() {
-        if (cachedToken != null) return cachedToken;
+        // 토큰이 있고 만료 안됐으면 재사용
+        if (cachedToken != null && tokenExpiry != null && LocalDateTime.now().isBefore(tokenExpiry)) {
+            return cachedToken;
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -45,6 +49,7 @@ public class KisTokenService {
         );
 
         cachedToken = (String) response.getBody().get("access_token");
+        tokenExpiry = LocalDateTime.now().plusHours(23); // 24시간 유효
         return cachedToken;
     }
 }

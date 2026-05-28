@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -120,5 +120,91 @@ public class StockService {
 
     public List<Stock> getAllStocks() {
         return stockRepository.findAll();
+    }
+    // 일봉 데이터 조회 (최근 30일)
+    public List<Map<String, Object>> getDailyChart(String symbol) {
+        String token = kisTokenService.getAccessToken();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("authorization", "Bearer " + token);
+        headers.set("appkey", appKey);
+        headers.set("appsecret", appSecret);
+        headers.set("tr_id", "FHKST03010100");
+        headers.set("custtype", "P");
+
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+        // 일봉
+        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String past = java.time.LocalDate.now().minusDays(30).format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        String url = baseUrl + "/uapi/domestic-stock/v1/quotations/inquire-daily-price"
+                + "?fid_cond_mrkt_div_code=J"
+                + "&fid_input_iscd=" + symbol
+                + "&fid_period_div_code=D"
+                + "&fid_org_adj_prc=0"
+                + "&fid_input_date_1=" + past
+                + "&fid_input_date_2=" + today;
+
+        ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);
+        List<Map<String, Object>> output = (List<Map<String, Object>>) response.getBody().get("output2");
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        if (output != null) {
+            for (Map<String, Object> item : output) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("date", item.get("stck_bsop_date"));
+                data.put("close", item.get("stck_clpr"));
+                data.put("open", item.get("stck_oprc"));
+                data.put("high", item.get("stck_hgpr"));
+                data.put("low", item.get("stck_lwpr"));
+                data.put("volume", item.get("acml_vol"));
+                result.add(data);
+            }
+        }
+        return result;
+    }
+
+    // 주봉 데이터 조회
+    public List<Map<String, Object>> getWeeklyChart(String symbol) {
+        String token = kisTokenService.getAccessToken();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("authorization", "Bearer " + token);
+        headers.set("appkey", appKey);
+        headers.set("appsecret", appSecret);
+        headers.set("tr_id", "FHKST03010100");
+        headers.set("custtype", "P");
+
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+// 주봉
+        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String past = java.time.LocalDate.now().minusMonths(3).format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        String url = baseUrl + "/uapi/domestic-stock/v1/quotations/inquire-daily-price"
+                + "?fid_cond_mrkt_div_code=J"
+                + "&fid_input_iscd=" + symbol
+                + "&fid_period_div_code=W"
+                + "&fid_org_adj_prc=0"
+                + "&fid_input_date_1=" + past
+                + "&fid_input_date_2=" + today;
+
+        ResponseEntity<Map> response = restTemplate.exchange(url, HttpMethod.GET, request, Map.class);
+        List<Map<String, Object>> output = (List<Map<String, Object>>) response.getBody().get("output2");
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        if (output != null) {
+            for (Map<String, Object> item : output) {
+                Map<String, Object> data = new HashMap<>();
+                data.put("date", item.get("stck_bsop_date"));
+                data.put("close", item.get("stck_clpr"));
+                data.put("open", item.get("stck_oprc"));
+                data.put("high", item.get("stck_hgpr"));
+                data.put("low", item.get("stck_lwpr"));
+                data.put("volume", item.get("acml_vol"));
+                result.add(data);
+            }
+        }
+        return result;
     }
 }

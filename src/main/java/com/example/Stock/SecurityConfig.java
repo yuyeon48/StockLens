@@ -30,6 +30,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/register", "/login", "/oauth2/**", "/login/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll() // ← 추가
                         .requestMatchers("/stocks/ai-recommend").authenticated()
                         .anyRequest().permitAll()
                 )

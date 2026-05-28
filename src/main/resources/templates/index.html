@@ -3,154 +3,239 @@
       xmlns:sec="http://www.thymeleaf.org/extras/springsecurity6">
 <head>
     <meta charset="UTF-8">
-    <title>한국 주식 Top50</title>
+    <title>StockLens</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Apple SD Gothic Neo', sans-serif; background: #0d1117; color: #e6edf3; }
-        header { background: #161b22; padding: 20px 40px; border-bottom: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
-        header h1 { font-size: 20px; color: #58a6ff; }
-        .header-btns { display: flex; align-items: center; gap: 8px; }
-        #refresh-btn { background: #238636; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; }
-        #refresh-btn:hover { background: #2ea043; }
-        #refresh-btn:disabled { background: #444; cursor: not-allowed; }
-        #ai-btn { background: #6e40c9; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; }
-        #ai-btn:hover { background: #8957e5; }
-        #ai-btn:disabled { background: #444; cursor: not-allowed; }
-        .btn-login { background: #444; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; }
-        .btn-register { background: #238636; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; }
-        .btn-google { background: #4285f4; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; }
-        .btn-logout { background: #da3633; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 14px; }
-        .user-info { display: flex; align-items: center; gap: 10px; }
-        .container { padding: 30px 40px; }
-        #status { margin-bottom: 16px; color: #8b949e; font-size: 14px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f6f8; color: #1a1a2e; }
+
+        /* 헤더 */
+        header { background: #ffffff; padding: 0 40px; border-bottom: 1px solid #e8eaed; display: flex; justify-content: space-between; align-items: center; height: 56px; position: sticky; top: 0; z-index: 100; }
+        .logo { font-size: 18px; font-weight: 700; color: #1a1a2e; letter-spacing: -0.5px; }
+        .logo span { color: #2563eb; }
+        .header-right { display: flex; align-items: center; gap: 8px; }
+        .btn { padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: all 0.15s; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-secondary { background: #f1f3f5; color: #495057; }
+        .btn-secondary:hover { background: #e9ecef; }
+        .btn-outline { background: white; color: #495057; border: 1px solid #dee2e6; }
+        .btn-outline:hover { background: #f8f9fa; }
+        .btn-danger { background: #fee2e2; color: #dc2626; }
+        .btn-danger:hover { background: #fecaca; }
+        .btn-text { background: none; color: #2563eb; font-size: 13px; font-weight: 500; }
+        .user-name { font-size: 13px; color: #495057; font-weight: 500; }
+        a.btn { text-decoration: none; display: inline-flex; align-items: center; }
+
+        /* 컨테이너 */
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px 40px; }
+
+        /* 상단 정보 바 */
+        .info-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .last-update { font-size: 12px; color: #9ca3af; }
+        .action-btns { display: flex; gap: 8px; }
 
         /* 탭 */
-        .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid #30363d; }
-        .tab-btn { background: none; border: none; color: #8b949e; padding: 10px 20px; cursor: pointer; font-size: 14px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
-        .tab-btn:hover { color: #e6edf3; }
-        .tab-btn.active { color: #58a6ff; border-bottom: 2px solid #58a6ff; font-weight: 600; }
+        .tabs { display: flex; gap: 0; margin-bottom: 0; border-bottom: 1px solid #e8eaed; margin-bottom: -1px; }
+        .tab-btn { background: none; border: none; color: #6b7280; padding: 10px 16px; cursor: pointer; font-size: 13px; font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+        .tab-btn:hover { color: #1a1a2e; }
+        .tab-btn.active { color: #2563eb; border-bottom: 2px solid #2563eb; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        #ai-result { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 20px; line-height: 1.8; white-space: pre-wrap; display: none; }
-        #ai-result h3 { color: #8957e5; margin-bottom: 12px; font-size: 16px; }
-        table { width: 100%; border-collapse: collapse; background: #161b22; border-radius: 8px; overflow: hidden; }
-        th { background: #21262d; padding: 14px 16px; text-align: right; font-size: 13px; color: #8b949e; border-bottom: 1px solid #30363d; }
+        /* 테이블 */
+        .table-wrap { background: white; border-radius: 10px; border: 1px solid #e8eaed; overflow: hidden; margin-top: 16px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 11px 16px; text-align: right; font-size: 11px; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; background: #f9fafb; border-bottom: 1px solid #e8eaed; }
         th:first-child, th:nth-child(2) { text-align: left; }
-        td { padding: 14px 16px; text-align: right; font-size: 14px; border-bottom: 1px solid #21262d; }
+        td { padding: 13px 16px; text-align: right; font-size: 13px; border-bottom: 1px solid #f3f4f6; color: #374151; }
         td:first-child, td:nth-child(2) { text-align: left; }
-        tr:hover td { background: #1c2128; }
-        .rank { color: #8b949e; font-size: 13px; }
-        .name { font-weight: 600; }
-        .symbol { color: #8b949e; font-size: 12px; }
-        .up { color: #f85149; }
-        .down { color: #58a6ff; }
-        .flat { color: #8b949e; }
-        .volume { color: #8b949e; }
-        .watch-btn { background: none; border: 1px solid #30363d; border-radius: 4px; color: #8b949e; cursor: pointer; padding: 4px 8px; font-size: 14px; }
-        .watch-btn.active { color: #f1c40f; border-color: #f1c40f; }
-        .empty-msg { text-align: center; padding: 60px; color: #8b949e; font-size: 15px; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: #f9fafb; }
+        .rank { color: #9ca3af; font-size: 12px; font-weight: 500; }
+        .stock-name { font-weight: 600; font-size: 13px; color: #111827; cursor: pointer; }
+        .stock-name:hover { color: #2563eb; }
+        .stock-code { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+        .price { font-weight: 600; font-size: 13px; color: #111827; }
+        .up { color: #dc2626; }
+        .down { color: #2563eb; }
+        .flat { color: #6b7280; }
+        .volume { color: #6b7280; font-size: 12px; }
+
+        /* 관심 버튼 */
+        .watch-btn { background: none; border: none; cursor: pointer; font-size: 16px; color: #d1d5db; padding: 2px; transition: color 0.15s; }
+        .watch-btn:hover { color: #f59e0b; }
+        .watch-btn.active { color: #f59e0b; }
+
+        /* 빈 상태 */
+        .empty-msg { text-align: center; padding: 60px; color: #9ca3af; font-size: 14px; }
+
+        /* AI 추천 결과 */
+        #ai-result { background: white; border: 1px solid #e8eaed; border-radius: 10px; padding: 20px; margin-bottom: 16px; line-height: 1.8; white-space: pre-wrap; display: none; font-size: 13px; color: #374151; }
+        #ai-result h3 { color: #111827; font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+
+        /* 차트 팝업 */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; border-radius: 12px; padding: 24px; width: 760px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+        .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .modal-title { font-size: 16px; font-weight: 700; color: #111827; }
+        .modal-subtitle { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+        .modal-close { background: none; border: none; color: #9ca3af; font-size: 20px; cursor: pointer; padding: 0; }
+        .modal-close:hover { color: #374151; }
+        .stock-info-bar { display: flex; gap: 24px; margin-bottom: 16px; padding: 12px 16px; background: #f9fafb; border-radius: 8px; }
+        .info-item label { font-size: 11px; color: #9ca3af; display: block; margin-bottom: 2px; }
+        .info-item strong { font-size: 14px; font-weight: 600; color: #111827; }
+        .chart-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+        .chart-tab { background: #f1f3f5; border: none; color: #6b7280; padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 500; }
+        .chart-tab.active { background: #2563eb; color: white; }
+        .chart-container { position: relative; height: 280px; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>🇰🇷 한국 주식 시가총액 Top 50</h1>
-    <div class="header-btns">
-        <button id="refresh-btn" onclick="refresh()">🔄 실시간 업데이트</button>
-        <button id="ai-btn" onclick="getAiRecommend()">🤖 AI 종목 추천</button>
-
-        <!-- 로그인 상태 -->
-        <div class="user-info" sec:authorize="isAuthenticated()">
-            <span th:text="${username} + '님 환영합니다! 👋'" style="color:#58a6ff; font-size:14px;"></span>
-            <a href="/logout" class="btn-logout">로그아웃</a>
+    <div class="logo">Stock<span>Lens</span></div>
+    <div class="header-right">
+        <div sec:authorize="isAuthenticated()">
+            <span class="user-name" th:text="${username}"></span>
+            <a href="/logout" class="btn btn-danger" style="margin-left:8px;">로그아웃</a>
         </div>
-
-        <!-- 비로그인 상태 -->
-        <div class="user-info" sec:authorize="!isAuthenticated()">
-            <a href="/login" class="btn-login">🔐 로그인</a>
-            <a href="/register" class="btn-register">회원가입</a>
-            <a href="/oauth2/authorization/google" class="btn-google">🔑 구글 로그인</a>
+        <div sec:authorize="!isAuthenticated()" style="display:flex; gap:6px;">
+            <a href="/login" class="btn btn-outline">로그인</a>
+            <a href="/register" class="btn btn-outline">회원가입</a>
+            <a href="/oauth2/authorization/google" class="btn btn-primary">Google로 시작</a>
         </div>
     </div>
 </header>
 
 <div class="container">
-    <div id="status">마지막 업데이트: 서버 시작 시점</div>
 
-    <!-- AI 추천 결과 -->
     <div id="ai-result">
-        <h3>🤖 AI 종목 추천</h3>
+        <h3>AI 종목 추천</h3>
         <div id="ai-content"></div>
     </div>
 
-    <!-- 탭 -->
+    <div class="info-bar">
+        <span class="last-update" id="status">마지막 업데이트: 서버 시작 시점</span>
+        <div class="action-btns">
+            <button class="btn btn-secondary" id="ai-btn" onclick="getAiRecommend()">종목 추천</button>
+            <button class="btn btn-primary" id="refresh-btn" onclick="refresh()">실시간 업데이트</button>
+        </div>
+    </div>
+
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('all', this)">📈 전체 Top50</button>
-        <button class="tab-btn" onclick="switchTab('watchlist', this)" sec:authorize="isAuthenticated()">⭐ 관심종목</button>
+        <button class="tab-btn active" onclick="switchTab('all', this)">전체 Top50</button>
+        <button class="tab-btn" onclick="switchTab('watchlist', this)" sec:authorize="isAuthenticated()">관심종목</button>
     </div>
 
     <!-- 전체 탭 -->
     <div id="tab-all" class="tab-content active">
-        <table>
-            <thead>
-            <tr>
-                <th>순위</th>
-                <th>종목명</th>
-                <th>현재가</th>
-                <th>전일대비</th>
-                <th>등락률</th>
-                <th>거래량</th>
-                <th>관심</th>
-            </tr>
-            </thead>
-            <tbody id="stock-table">
-            <tr th:each="stock, stat : ${stocks}">
-                <td class="rank" th:text="${stat.index + 1}"></td>
-                <td>
-                    <div class="name" th:text="${stock.name}"></div>
-                    <div class="symbol" th:text="${stock.symbol}"></div>
-                </td>
-                <td th:text="${#numbers.formatInteger(stock.price, 1, 'COMMA')} + '원'"></td>
-                <td th:classappend="${stock.change > 0} ? 'up' : (${stock.change < 0} ? 'down' : 'flat')"
-                    th:text="${stock.change > 0} ? '+' + ${stock.change} : ${stock.change}"></td>
-                <td th:classappend="${stock.changePercent > 0} ? 'up' : (${stock.changePercent < 0} ? 'down' : 'flat')"
-                    th:text="${stock.changePercent > 0} ? '+' + ${stock.changePercent} + '%' : ${stock.changePercent} + '%'"></td>
-                <td class="volume" th:text="${#numbers.formatInteger(stock.volume, 1, 'COMMA')}"></td>
-                <td>
-                    <button class="watch-btn"
-                            th:attr="data-symbol=${stock.symbol}, data-name=${stock.name}"
-                            onclick="toggleWatch(this)">⭐</button>
-                </td>
-            </tr>
-            </tbody>
-        </table>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>종목명</th>
+                    <th>현재가</th>
+                    <th>전일대비</th>
+                    <th>등락률</th>
+                    <th>거래량</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody id="stock-table">
+                <tr th:each="stock, stat : ${stocks}">
+                    <td class="rank" th:text="${stat.index + 1}"></td>
+                    <td>
+                        <div class="stock-name"
+                             th:attr="onclick='openChart(&quot;' + ${stock.symbol} + '&quot;,&quot;' + ${stock.name} + '&quot;,' + ${stock.price} + ',' + ${stock.change} + ',' + ${stock.changePercent} + ',' + ${stock.volume} + ')'">
+                            <span th:text="${stock.name}"></span>
+                        </div>
+                        <div class="stock-code" th:text="${stock.symbol}"></div>
+                    </td>
+                    <td class="price" th:text="${#numbers.formatInteger(stock.price, 1, 'COMMA')} + '원'"></td>
+                    <td th:classappend="${stock.change > 0} ? 'up' : (${stock.change < 0} ? 'down' : 'flat')"
+                        th:text="${stock.change > 0} ? '+' + ${stock.change} : ${stock.change}"></td>
+                    <td th:classappend="${stock.changePercent > 0} ? 'up' : (${stock.changePercent < 0} ? 'down' : 'flat')"
+                        th:text="${stock.changePercent > 0} ? '+' + ${stock.changePercent} + '%' : ${stock.changePercent} + '%'"></td>
+                    <td class="volume" th:text="${#numbers.formatInteger(stock.volume, 1, 'COMMA')}"></td>
+                    <td>
+                        <button class="watch-btn"
+                                th:attr="data-symbol=${stock.symbol}, data-name=${stock.name}"
+                                onclick="toggleWatch(this)">★</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- 관심종목 탭 -->
     <div id="tab-watchlist" class="tab-content">
-        <table>
-            <thead>
-            <tr>
-                <th>종목명</th>
-                <th>현재가</th>
-                <th>전일대비</th>
-                <th>등락률</th>
-                <th>거래량</th>
-                <th>관심</th>
-            </tr>
-            </thead>
-            <tbody id="watchlist-table">
-            </tbody>
-        </table>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>종목명</th>
+                    <th>현재가</th>
+                    <th>전일대비</th>
+                    <th>등락률</th>
+                    <th>거래량</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody id="watchlist-table"></tbody>
+            </table>
+        </div>
         <div id="watchlist-empty" class="empty-msg" style="display:none">
-            ⭐ 관심종목을 추가해보세요!
+            관심종목을 추가해보세요
+        </div>
+    </div>
+</div>
+
+<!-- 차트 팝업 -->
+<div class="modal-overlay" id="chart-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <div class="modal-title" id="modal-title"></div>
+                <div class="modal-subtitle" id="modal-symbol"></div>
+            </div>
+            <button class="modal-close" onclick="closeChart()">✕</button>
+        </div>
+        <div class="stock-info-bar">
+            <div class="info-item">
+                <label>현재가</label>
+                <strong id="modal-price"></strong>
+            </div>
+            <div class="info-item">
+                <label>전일대비</label>
+                <strong id="modal-change"></strong>
+            </div>
+            <div class="info-item">
+                <label>등락률</label>
+                <strong id="modal-percent"></strong>
+            </div>
+            <div class="info-item">
+                <label>거래량</label>
+                <strong id="modal-volume"></strong>
+            </div>
+        </div>
+        <div class="chart-tabs">
+            <button class="chart-tab active" onclick="switchChartTab('daily', this)">일봉</button>
+            <button class="chart-tab" onclick="switchChartTab('weekly', this)">주봉</button>
+        </div>
+        <div class="chart-container">
+            <canvas id="stock-chart"></canvas>
         </div>
     </div>
 </div>
 
 <script>
-    // 탭 전환
+    let currentChart = null;
+    let currentSymbol = null;
+
     function switchTab(tab, btn) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -159,12 +244,11 @@
         if (tab === 'watchlist') loadWatchListTab();
     }
 
-    // 전체 종목 업데이트
     function refresh() {
         const btn = document.getElementById('refresh-btn');
         const status = document.getElementById('status');
         btn.disabled = true;
-        btn.textContent = '⏳ 업데이트 중...';
+        btn.textContent = '업데이트 중...';
 
         fetch('/stocks/refresh', { method: 'POST' })
             .then(res => res.json())
@@ -177,78 +261,80 @@
                     tbody.innerHTML += `
                         <tr>
                             <td class="rank">${i + 1}</td>
-                            <td><div class="name">${stock.name}</div><div class="symbol">${stock.symbol}</div></td>
-                            <td>${stock.price.toLocaleString()}원</td>
+                            <td>
+                                <div class="stock-name" onclick="openChart('${stock.symbol}','${stock.name}',${stock.price},${stock.change},${stock.changePercent},${stock.volume})">${stock.name}</div>
+                                <div class="stock-code">${stock.symbol}</div>
+                            </td>
+                            <td class="price">${stock.price.toLocaleString()}원</td>
                             <td class="${changeClass}">${changeSign}${stock.change}</td>
                             <td class="${changeClass}">${changeSign}${stock.changePercent}%</td>
                             <td class="volume">${stock.volume.toLocaleString()}</td>
-                            <td><button class="watch-btn" data-symbol="${stock.symbol}" data-name="${stock.name}" onclick="toggleWatch(this)">⭐</button></td>
+                            <td><button class="watch-btn" data-symbol="${stock.symbol}" data-name="${stock.name}" onclick="toggleWatch(this)">★</button></td>
                         </tr>`;
                 });
                 status.textContent = '마지막 업데이트: ' + new Date().toLocaleTimeString();
                 btn.disabled = false;
-                btn.textContent = '🔄 실시간 업데이트';
+                btn.textContent = '실시간 업데이트';
                 markWatchedStocks();
+            })
+            .catch(err => {
+                status.textContent = '업데이트 실패';
+                btn.disabled = false;
+                btn.textContent = '실시간 업데이트';
             });
     }
 
-    // AI 추천
     function getAiRecommend() {
         const btn = document.getElementById('ai-btn');
         const result = document.getElementById('ai-result');
         const content = document.getElementById('ai-content');
         btn.disabled = true;
-        btn.textContent = '⏳ AI 분석 중...';
+        btn.textContent = '분석 중...';
         result.style.display = 'block';
-        content.textContent = 'AI가 데이터를 분석하고 있습니다...';
+        content.textContent = '데이터를 분석하고 있습니다...';
 
         fetch('/stocks/ai-recommend')
             .then(res => res.text())
             .then(data => {
                 content.textContent = data;
                 btn.disabled = false;
-                btn.textContent = '🤖 AI 종목 추천';
+                btn.textContent = '종목 추천';
             });
     }
 
-    // 관심종목 탭 로드
     function loadWatchListTab() {
         fetch('/stocks/watchlist')
             .then(res => res.json())
             .then(watchlist => {
                 const tbody = document.getElementById('watchlist-table');
                 const empty = document.getElementById('watchlist-empty');
-
                 if (watchlist.length === 0) {
                     tbody.innerHTML = '';
                     empty.style.display = 'block';
                     return;
                 }
                 empty.style.display = 'none';
-
-                // 전체 주식 데이터에서 관심종목 필터링
                 const allRows = document.querySelectorAll('#stock-table tr');
                 const stockMap = {};
                 allRows.forEach(row => {
-                    const symbol = row.querySelector('.symbol')?.textContent;
-                    if (symbol) stockMap[symbol] = row.innerHTML;
+                    const code = row.querySelector('.stock-code')?.textContent;
+                    if (code) stockMap[code] = row.innerHTML;
                 });
-
                 tbody.innerHTML = watchlist.map(w => {
                     const row = stockMap[w.symbol];
-                    if (row) {
-                        return `<tr>${row}</tr>`;
-                    }
+                    if (row) return `<tr>${row}</tr>`;
                     return `<tr>
-                        <td><div class="name">${w.name}</div><div class="symbol">${w.symbol}</div></td>
-                        <td colspan="4" style="color:#8b949e">데이터 없음 (업데이트 필요)</td>
-                        <td><button class="watch-btn active" data-symbol="${w.symbol}" data-name="${w.name}" onclick="toggleWatch(this)">⭐</button></td>
+                        <td>
+                            <div class="stock-name" onclick="openChart('${w.symbol}','${w.name}',0,0,0,0)">${w.name}</div>
+                            <div class="stock-code">${w.symbol}</div>
+                        </td>
+                        <td colspan="4" style="color:#9ca3af; font-size:12px;">업데이트 필요</td>
+                        <td><button class="watch-btn active" data-symbol="${w.symbol}" data-name="${w.name}" onclick="toggleWatch(this)">★</button></td>
                     </tr>`;
                 }).join('');
             });
     }
 
-    // 관심종목 토글
     function toggleWatch(btn) {
         const symbol = btn.getAttribute('data-symbol');
         const name = btn.getAttribute('data-name');
@@ -263,15 +349,13 @@
         })
         .then(() => {
             btn.classList.toggle('active');
-            // 관심종목 탭이 열려있으면 새로고침
             if (document.getElementById('tab-watchlist').classList.contains('active')) {
                 loadWatchListTab();
             }
         })
-        .catch(() => alert('로그인이 필요합니다!'));
+        .catch(() => alert('로그인이 필요합니다.'));
     }
 
-    // 이미 관심종목인 것 표시
     function markWatchedStocks() {
         fetch('/stocks/watchlist')
             .then(res => res.json())
@@ -285,6 +369,84 @@
             })
             .catch(() => {});
     }
+
+    function openChart(symbol, name, price, change, changePercent, volume) {
+        currentSymbol = symbol;
+        document.getElementById('modal-title').textContent = name;
+        document.getElementById('modal-symbol').textContent = symbol;
+        document.getElementById('modal-price').textContent = Number(price).toLocaleString() + '원';
+
+        const changeEl = document.getElementById('modal-change');
+        const percentEl = document.getElementById('modal-percent');
+        changeEl.textContent = (change > 0 ? '+' : '') + Number(change).toLocaleString();
+        percentEl.textContent = (changePercent > 0 ? '+' : '') + changePercent + '%';
+        changeEl.style.color = change > 0 ? '#dc2626' : change < 0 ? '#2563eb' : '#6b7280';
+        percentEl.style.color = change > 0 ? '#dc2626' : change < 0 ? '#2563eb' : '#6b7280';
+        document.getElementById('modal-volume').textContent = Number(volume).toLocaleString();
+
+        document.getElementById('chart-modal').classList.add('active');
+        document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.chart-tab')[0].classList.add('active');
+        loadChart(symbol, 'daily');
+    }
+
+    function closeChart() {
+        document.getElementById('chart-modal').classList.remove('active');
+        if (currentChart) { currentChart.destroy(); currentChart = null; }
+    }
+
+    function switchChartTab(type, btn) {
+        document.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        loadChart(currentSymbol, type);
+    }
+
+    function loadChart(symbol, type) {
+        fetch(`/stocks/chart/${symbol}/${type}`)
+            .then(res => res.json())
+            .then(data => {
+                const labels = data.map(d => {
+                    const d_ = d.date;
+                    return d_.slice(0,4) + '.' + d_.slice(4,6) + '.' + d_.slice(6,8);
+                }).reverse();
+                const prices = data.map(d => parseFloat(d.close)).reverse();
+
+                if (currentChart) currentChart.destroy();
+
+                const ctx = document.getElementById('stock-chart').getContext('2d');
+                const isUp = prices[prices.length-1] >= prices[0];
+                const color = isUp ? '#dc2626' : '#2563eb';
+
+                currentChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            data: prices,
+                            borderColor: color,
+                            backgroundColor: isUp ? 'rgba(220,38,38,0.05)' : 'rgba(37,99,235,0.05)',
+                            borderWidth: 1.5,
+                            pointRadius: 0,
+                            fill: true,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#9ca3af', maxTicksLimit: 8, font: { size: 11 } }, grid: { color: '#f3f4f6' } },
+                            y: { ticks: { color: '#9ca3af', callback: v => v.toLocaleString(), font: { size: 11 } }, grid: { color: '#f3f4f6' } }
+                        }
+                    }
+                });
+            });
+    }
+
+    document.getElementById('chart-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeChart();
+    });
 
     window.onload = () => markWatchedStocks();
 </script>
