@@ -23,16 +23,18 @@
 | 인증 | Spring Security, OAuth2 (Google) |
 
 ## 📁 프로젝트 구조
+
+```
 src/main/java/com/example/Stock
 ├── controller
-│   ├── StockController.java    # 주식 관련 API
-│   └── AuthController.java     # 회원가입/로그인
+│   ├── StockController.java
+│   └── AuthController.java
 ├── service
-│   ├── StockService.java       # 주가 조회, 크롤링
-│   ├── KisTokenService.java    # KIS API 토큰 관리
-│   ├── AiRecommendService.java # AI 추천
-│   ├── WatchListService.java   # 관심종목
-│   ├── UserService.java        # 회원 관리
+│   ├── StockService.java
+│   ├── KisTokenService.java
+│   ├── AiRecommendService.java
+│   ├── WatchListService.java
+│   ├── UserService.java
 │   ├── CustomOAuth2UserService.java
 │   └── CustomUserDetailsService.java
 ├── domain
@@ -40,9 +42,10 @@ src/main/java/com/example/Stock
 │   ├── User.java
 │   └── WatchList.java
 └── repository
-├── StockRepository.java
-├── UserRepository.java
-└── WatchListRepository.java
+    ├── StockRepository.java
+    ├── UserRepository.java
+    └── WatchListRepository.java
+```
 
 ## ⚙️ 실행 방법
 
